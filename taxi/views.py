@@ -1,5 +1,4 @@
 from django.contrib.auth.decorators import login_required
-from django.http import HttpRequest
 from django.shortcuts import render, redirect
 from django.urls import reverse_lazy
 from django.views import generic
@@ -63,15 +62,16 @@ class CarListView(LoginRequiredMixin, generic.ListView):
 class CarDetailView(LoginRequiredMixin, generic.DetailView):
     model = Car
 
-    def post(self, request,*args,**kwargs):
+    def post(self, request, *args, **kwargs):
         self.object = self.get_object()
-        action  = request.POST.get("action")
+        action = request.POST.get("action")
         driver = request.user
-        if action == "assign":
-            self.object.drivers.add(driver)
-        elif action == "delete":
-            self.object.drivers.remove(driver)
-        return redirect("taxi:car-detail", pk=self.object.pk)
+        if isinstance(request.user, Driver):
+            if action == "assign":
+                self.object.drivers.add(driver)
+            elif action == "delete":
+                self.object.drivers.remove(driver)
+            return redirect("taxi:car-detail", pk=self.object.pk)
 
 
 class CarCreateView(LoginRequiredMixin, generic.CreateView):
@@ -99,6 +99,7 @@ class DriverListView(LoginRequiredMixin, generic.ListView):
 class DriverCreateView(LoginRequiredMixin, generic.CreateView):
     model = Driver
     form_class = DriverForm
+    success_url = reverse_lazy("taxi:driver-list")
 
 
 class DriverDeleteView(LoginRequiredMixin, generic.DeleteView):
@@ -112,7 +113,7 @@ class DriverDetailView(LoginRequiredMixin, generic.DetailView):
     queryset = Driver.objects.all().prefetch_related("cars__manufacturer")
 
 
-class DriverLicenseUpdate(LoginRequiredMixin, generic.UpdateView):
+class DriverUpdate(LoginRequiredMixin, generic.UpdateView):
     model = Driver
     form_class = DriverLicenseUpdateForm
     template_name = "taxi/driver_update.html"
