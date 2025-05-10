@@ -14,7 +14,7 @@
   <p>Manufacturer: ({{ car.manufacturer.name }}, {{ car.manufacturer.country }})</p>
     <form method="post">
       {% csrf_token %}
-      {% if user not in car.drivers.all %}
+      {% if not is_assigned %}
         <button style="float: right" class="btn btn-primary" type="submit" name="action" value="assign">Assign me to this car</button>
       {% else %}
         <button style="float: right" class="btn btn-danger" type="submit" name="action" value="delete">Delete me from this car</button>

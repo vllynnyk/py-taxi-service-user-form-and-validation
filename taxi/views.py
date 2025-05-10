@@ -1,4 +1,5 @@
 from django.contrib.auth.decorators import login_required
+from django.core.exceptions import PermissionDenied
 from django.shortcuts import render, redirect
 from django.urls import reverse_lazy
 from django.views import generic
@@ -72,6 +73,15 @@ class CarDetailView(LoginRequiredMixin, generic.DetailView):
             elif action == "delete":
                 self.object.drivers.remove(driver)
             return redirect("taxi:car-detail", pk=self.object.pk)
+        else:
+            raise PermissionDenied("Only drivers can modify car assignments.")
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        car = self.get_object()
+        user = self.request.user
+        context["is_assigned"] = user in car.drivers.all()
+        return context
 
 
 class CarCreateView(LoginRequiredMixin, generic.CreateView):
@@ -113,7 +123,7 @@ class DriverDetailView(LoginRequiredMixin, generic.DetailView):
     queryset = Driver.objects.all().prefetch_related("cars__manufacturer")
 
 
-class DriverUpdate(LoginRequiredMixin, generic.UpdateView):
+class DriverUpdateView(LoginRequiredMixin, generic.UpdateView):
     model = Driver
     form_class = DriverLicenseUpdateForm
     template_name = "taxi/driver_update.html"
